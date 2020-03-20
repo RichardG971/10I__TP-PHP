@@ -4,25 +4,26 @@
 require_once('../Connexion.php');
 
 if($_SESSION['role'] == 1) {
-    $sql = "SELECT numChambre FROM chambre";
-    $res = mysqli_prepare($connect, $sql);
-    mysqli_stmt_execute($res);
-    mysqli_stmt_bind_result($res, $nChAll);
-    while(mysqli_stmt_fetch($res)) {
-        $nChAllCompar[] = $nChAll;
-    }
-    mysqli_stmt_close($res);
+    if($connect) {
+        $sql = "SELECT numChambre FROM chambre";
+        $res = mysqli_prepare($connect, $sql);
+        mysqli_stmt_execute($res);
+        mysqli_stmt_bind_result($res, $nChAll);
+        while(mysqli_stmt_fetch($res)) {
+            $nChAllCompar[] = $nChAll;
+        }
+        mysqli_stmt_close($res);
 
-    $nCh = $prix = $nLits = $nPers = $conf = $descr = '';
+        $nCh = $prix = $nLits = $nPers = $conf = $descr = '';
 
-    if(isset($_POST['ajouter'])
-        && !empty($_POST['nCh'])
-        && !empty($_POST['prix'])
-        && !empty($_POST['conf']))
-    {
-        // print_r($_POST);
         
-        if($connect) {
+        if(isset($_POST['ajouter'])
+            && !empty($_POST['nCh'])
+            && !empty($_POST['prix'])
+            && !empty($_POST['conf']))
+        {
+            // print_r($_POST);
+            
             $nCh = (int)$_POST['nCh'];
             $prix = (int)$_POST['prix'];
             $nLits = (int)$_POST['nLits'];
@@ -31,7 +32,7 @@ if($_SESSION['role'] == 1) {
             $img = $_FILES['image']['name'];
             $descr = trim(addslashes(htmlentities($_POST['descr'])));
             
-            foreach($nChAllCompar as $key => $value) {
+            foreach($nChAllCompar as $value) {
                 if($value == $nCh) {
                     $nChExist = '<h3 class="text-center"><span class="bg-warning rounded px-3">Numéro de chambre éxistant</span></h3>';
                     break;
@@ -58,8 +59,7 @@ if($_SESSION['role'] == 1) {
                 }
             }
             mysqli_stmt_close($res);
-        } else { echo "<script>alert('Connexion perdue');</script>"; }
-    }
+        }
 ?>
 
 <?php require_once('../Partials/Header.php'); ?>
@@ -85,11 +85,11 @@ if(isset($nChExist)) {
                 </div>
                 <div class="col-md">
                     <label for="nLits">Nombre de lits :</label>
-                    <input type="text" name="nLits" id="nLits" class="form-control text-center" value="<?= $nLits ?>" min="1" pattern="[1-8]{1}" title="chiffre de 1 à 4" placeholder="Nombre de lits" required>
+                    <input type="text" name="nLits" id="nLits" class="form-control text-center" value="<?= $nLits ?>" min="1" pattern="[1-8]" title="chiffre de 1 à 4" placeholder="Nombre de lits" required>
                 </div>
                 <div class="col-md">
                     <label for="nPers">Capacité :</label>
-                    <input type="text" name="nPers" id="nPers" class="form-control text-center" value="<?= $nPers ?>" min="1" pattern="[0-9]{1,2}" title="nombre de 1 à 15" placeholder="Nombre de personnes" required>
+                    <input type="text" name="nPers" id="nPers" class="form-control text-center" value="<?= $nPers ?>" min="1" pattern="[1-9]|1[0-5]" title="nombre de 1 à 15" placeholder="Nombre de personnes" required>
                 </div>
             </div>
 
@@ -128,7 +128,8 @@ if(isset($nChExist)) {
 </div>
 
 <?php
-    require_once('../Partials/Footer.php');
+        require_once('../Partials/Footer.php');
+    } else { echo "<script>alert('Connexion perdue');</script>"; }
 } else {
     header('location:../Admin/index.php');
 }

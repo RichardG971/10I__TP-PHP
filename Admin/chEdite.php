@@ -82,9 +82,13 @@ if($_SESSION['role'] == 1) {
 
 <h2 class="text-center">Administration</h2>
 
-<?php 
-if(isset($upSuccess)) { echo $upSuccess; }
-?>
+<?php if(isset($upSuccess)) { echo $upSuccess; ?>
+<div class="input-group my-1 justify-content-end" style="margin-bottom: 0 !important;">
+    <div>
+        <a href="./index.php?action=list_chambre" class="btn btn-success">CHAMBRES</a>
+    </div>
+</div>
+<?php } ?>
 
 <div class="chEdit card posCenter">
     <div class="card-header text-center"><h4>Editer la chambre <?= $nCh ?></h4></div>
@@ -93,11 +97,11 @@ if(isset($upSuccess)) { echo $upSuccess; }
             <div class="row justify-content-center">
                 <div class="col-md-4">
                     <label for="nLits">Nombre de lits :</label>
-                    <input type="text" name="nLits" id="nLits" class="form-control text-center" value="<?= $nLits ?>" min="1" pattern="[1-8]{1}" title="chiffre de 1 à 4" required>
+                    <input type="text" name="nLits" id="nLits" class="form-control text-center" value="<?= $nLits ?>" min="1" pattern="[1-8]" title="chiffre de 1 à 4" required>
                 </div>
                 <div class="col-md-4">
                     <label for="nPers">Nombre de personnes :</label>
-                    <input type="text" name="nPers" id="nPers" class="form-control text-center" value="<?= $nPers ?>" min="1" pattern="[0-9]{1,2}" title="nombre de 1 à 15" required>
+                    <input type="text" name="nPers" id="nPers" class="form-control text-center" value="<?= $nPers ?>" min="1" pattern="[1-9]|1[0-5]" title="nombre de 1 à 15" required>
                 </div>
             </div>
 

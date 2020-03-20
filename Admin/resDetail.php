@@ -99,7 +99,12 @@ if(isset($_GET['client']) && isset($_GET['chambre'])) {
         mysqli_stmt_close($res);
 
         // Calcul du prix du séjour.
-        $tpsSejour = ((strtotime($dateDep) - strtotime($dateArr)) / 60 / 60 / 24);
+        $dateArrSej = new DateTime($dateArr);
+        $dateDepSej = new DateTime($dateDep);
+
+        $nbJour = $dateArrSej->diff($dateDepSej);
+
+        $tpsSejour = $nbJour->format('%a');
         $prixSejour = ($prix * $tpsSejour).' €';
 
         // Sélection du client.

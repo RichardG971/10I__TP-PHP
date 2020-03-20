@@ -33,7 +33,7 @@ if(isset($_GET['client']) && isset($_GET['chambre'])) {
                         Vous êtes autoriser à supprimer les réservations dont les clients ont fini leur séjour.
                         <br>Pour plus d'options, contacter un administrateur.
                     <h3>
-                    <h2 class="text-center">Echec de la suppression...</h2>';
+                    <h2 class="text-center">Echec de la suppression...</h2>
 
                 <?php
             } else {

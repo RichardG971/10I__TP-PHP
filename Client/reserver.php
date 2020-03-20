@@ -463,7 +463,7 @@ if(isset($_GET['id'])) {
                 </div>
                 <div class="col-md-4 col-12">
                     <label for="dateDep text-center"><span style="font-size: 1.5rem;">Date de départ</span></label>
-                    <input type="date" class="form-control text-center" id="dateDep" value="<?= $dateDep_rec ?>" name="dateDep" <?= $inpReqOrRead ?>>
+                    <input type="date" class="form-control text-center" id="dateDep" value="<?= $dateDep_rec ?>" name="dateDep" <?= $inpReqOrRead ?> title="Pour un séjour au delà de 28 jours, contacter directement l'établissement">
                 </div>
             </div>
 

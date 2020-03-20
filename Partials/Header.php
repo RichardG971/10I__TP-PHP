@@ -115,6 +115,11 @@
                 <li class="nav-item active dropdown ml-auto ">
                     <a class="nav-link dropdown-toggle" href="#" id="navbardrop" data-toggle="dropdown"><?= $_SESSION['login'] ?><span id="role" class="d-none"><?= $_SESSION['role'] ?></span></a>
                     <div class="dropdown-menu dropdown-menu-right">
+
+                        <?php if($_SESSION['role'] === 1) { ?>
+                        <a class="dropdown-item" href="../Admin/userAjout.php">Ajouter un utilisateur</a>
+                        <?php } ?>
+
                         <a class="dropdown-item" href="../Admin/admin.php">Gestion des réservations</a>
                         <a class="dropdown-item" href="../Admin/chambre.php" id="gestCh">Gestion des chambres</a>
                         <a class="dropdown-item" href="../Admin/Authentification/logout.php">Déconnexion</a>

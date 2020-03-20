@@ -8,6 +8,11 @@ if(isset($_GET['id'])) {
     $id = (int)htmlentities(trim($_GET['id']));
     
     if($connect) {
+        function f_ch_retourBdd($str) {
+            $str = stripslashes(html_entity_decode($str));
+            return $str;
+        }
+
         // Pour ajouter l''alt' aux images sans écrire leur extension avec 'substr($string, $start, $lenght)' :
         //   $string = la variable contenant le nom de l'image,
         //   $start = '0' car on prends le nom complet,
@@ -47,10 +52,10 @@ if(isset($_GET['id'])) {
                 
                 
                 <li class="list-group-item"><b>Nombre de lit(s) :</b> <?= $nbLits; ?></li>
-                <li class="list-group-item"><b>Confort :</b> <?= $confort; ?></li>
+                <li class="list-group-item"><b>Confort :</b> <?= f_ch_retourBdd($confort); ?></li>
                 <li class="list-group-item">
                     <h3>Description</h3>
-                    <?= $descr; ?>
+                    <?= f_ch_retourBdd($descr); ?>
                 </li>
                 <li class="list-group-item"><b>Prix :</b> <?= $prix; ?></li>
             </ul>

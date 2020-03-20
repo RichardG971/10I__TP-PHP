@@ -51,10 +51,10 @@ if($connect) {
     if(!isset($_GET['search']) || (empty($_GET['dateArrSearch']) && empty($_GET['dateDepSearch']))) {
         $sql = "SELECT * FROM chambre";
         $res = mysqli_prepare($connect, $sql);
-        // Exécution identique quelque soit la requête, donc écriture une seule fois suite au conditions. (cf. l.104) /ici/
+        // Exécution identique quelque soit la requête, donc écriture une seule fois suite au conditions. (cf. l.109)
         $nbRow = '';
     } else {
-        // Sélectionner les réservations pour connaitre les dates des chambres occupées.
+        // Sélectionner les réservations pour connaitre les dates des chambres occupées ou libres.
         $dateArrSearch = trim($_GET['dateArrSearch']);
         $dateDepSearch = trim($_GET['dateDepSearch']);
         $occupation = trim($_GET['occupation']);
@@ -106,7 +106,7 @@ if($connect) {
         mysqli_stmt_bind_param($res, 'ssssss', $dateArrSearch, $dateDepSearch, $dateArrSearch, $dateDepSearch, $dateArrSearch, $dateDepSearch);
     }
 
-    mysqli_stmt_execute($res);//là/
+    mysqli_stmt_execute($res);
     mysqli_stmt_bind_result($res, $nCh, $prix, $nbLits, $nbPers, $conf, $img, $descr);
     if(isset($nbRow)) {
         mysqli_stmt_store_result($res);

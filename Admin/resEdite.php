@@ -8,7 +8,6 @@ if(isset($_GET['client']) && isset($_GET['chambre'])) {
     $idCl_get = (int)trim($_GET['client']);
     $idCh_get = (int)trim($_GET['chambre']);
     
-    // $inpReqOrRead = 'required';
     $dateArr_rec = $dateDep_rec = $nom_rec = $prenom_rec = $tel_rec = '';
     $ad_rec = ['', '', ''];
     
@@ -107,6 +106,14 @@ if(isset($_GET['client']) && isset($_GET['chambre'])) {
         $dateArr_compar = trim($dateArr_bdd);
         $dateDep_compar = trim($dateDep_bdd);
 
+        // Calcul du temps du séjour.
+        $dateArr = new DateTime($dateArr_compar);
+        $dateDep = new DateTime($dateDep_compar);
+
+        $nbJour = $dateArr->diff($dateDep);
+
+        $tpsSejour = $nbJour->format('%a');
+
         // Calcul du temps d'une journée en secondes.
         $t1jour = (24*60*60);
         // Calcul du temps de 28 jours en seconde.
@@ -135,11 +142,15 @@ if(isset($_GET['client']) && isset($_GET['chambre'])) {
             }
         }
 
-        // Champs concerné requis ou en simple lecture selon le rôle.
-        if($_SESSION['role'] == 1) {
-            $inpReqOrRead = 'required';
-        } else {
+        // Champs concerné requis ou en simple lecture selon le rôle et la date de départ.
+        if($dateDep_compar < date('Y-m-d')) {
             $inpReqOrRead = 'readonly';
+        } else {
+            if($_SESSION['role'] == 1) {
+                $inpReqOrRead = 'required';
+            } else {
+                $inpReqOrRead = 'readonly';
+            }
         }
         
 
@@ -201,85 +212,96 @@ if(isset($_GET['client']) && isset($_GET['chambre'])) {
                 $recap_donnees['Mise à jour client'] = 'Non';
             }
             
-            if($_SESSION['role'] != 1 && $_POST['dateArr'] != $dateArr_compar) {
-                $recap_donnees['Dates saisies'] = 'Vous n\'êtes pas autorisé à modifier la date d\'arrivée.<br>Plus d\'options, contacter un administrateur.';
+            if($dateDep_compar < date('Y-m-d')) {
+                $recap_donnees['Dates saisies'] = 'Vous ne pouvez modifier les dates d\'un séjour terminé';
             } else {
-                // Traîter s'il y a mise à jour des dates.
-                if($_POST['dateArr'] != $dateArr_compar || $_POST['dateDep'] != $dateDep_compar) {
-                    $recap_donnees['Dates saisies'] = 'Dates modifiées';
-                    // Contrôle de la date d'arrivée si le séjour est en cours.
-                    if($_POST['dateArr'] != $dateArr_compar && $dateArr_compar < date('Y-m-d')) {
-                        $recap_donnees['Dates saisies'] = 'Date d\'arrivée ne peut pas être modifier pour un séjour en cours';
-                    } else {
-                        $dateArr_bdd = trim(addslashes(htmlentities($_POST['dateArr'])));
-                        
-                        // Contrôle de la date de départ selon le role.
-                        if(trim($_POST['dateDep']) < $dateDep_min) {
-                            if($_SESSION['role'] == 1) {
-                                if($dateDep_min == date('Y-m-d')) {
-                                    $recap_donnees['Dates saisies'] = 'Date de départ ne doit pas être inférieure à la date d\'aujourd\'hui.';
+                if($_SESSION['role'] != 1 && $_POST['dateArr'] != $dateArr_compar) {
+                    $recap_donnees['Dates saisies'] = 'Vous n\'êtes pas autorisé à modifier la date d\'arrivée.<br>Plus d\'options, contacter un administrateur.';
+                } else {
+                    // Traîter s'il y a mise à jour des dates.
+                    if($_POST['dateArr'] != $dateArr_compar || $_POST['dateDep'] != $dateDep_compar) {
+                        $recap_donnees['Dates saisies'] = 'Dates modifiées';
+                        // Contrôle de la date d'arrivée si le séjour est en cours.
+                        if($_POST['dateArr'] != $dateArr_compar && $dateArr_compar < date('Y-m-d')) {
+                            $recap_donnees['Dates saisies'] = 'Date d\'arrivée ne peut pas être modifier pour un séjour en cours';
+                        } else {
+                            $dateArr_bdd = trim(addslashes(htmlentities($_POST['dateArr'])));
+                            
+                            // Contrôle de la date de départ selon le role.
+                            if($dateDep_min < $dateArr_bdd) {
+                                $dateDep_min = date('Y-m-d', (strtotime($dateArr_bdd) + $t1jour));
+                                if($_SESSION['role'] !== 1) {
+                                    $dateDep_max = date('Y-m-d', (strtotime($dateArr_bdd) + $t1mois));
+                                }
+                            }
+
+                            if(trim($_POST['dateDep']) < $dateDep_min) {
+                                if($_SESSION['role'] == 1) {
+                                    if($dateDep_min == date('Y-m-d')) {
+                                        $recap_donnees['Dates saisies'] = 'Date de départ ne doit pas être inférieure à la date d\'aujourd\'hui.';
+                                    } else {
+                                        $recap_donnees['Dates saisies'] = 'Date de départ ne doit pas être inférieure ou égale à la date d\'arrivée.';
+                                    }
                                 } else {
-                                    $recap_donnees['Dates saisies'] = 'Date de départ ne doit pas être inférieure ou égale à la date d\'arrivée.';
+                                    $recap_donnees['Dates saisies'] = 'Date de départ ne doit pas être inférieure à la date de départ initialement enregistrée.';
                                 }
                             } else {
-                                $recap_donnees['Dates saisies'] = 'Date de départ ne doit pas être inférieure à la date de départ initialement enregistrée.';
-                            }
-                        } else {
-                            $recap_donnees['Dates saisies'] = 'Dates renseignées valides';
+                                $recap_donnees['Dates saisies'] = 'Dates renseignées valides';
 
-                            $dateDep_bdd = trim(addslashes(htmlentities($_POST['dateDep'])));
+                                $dateDep_bdd = trim(addslashes(htmlentities($_POST['dateDep'])));
 
-                            // Ajout de 24h à la date d'arrivée sélectionnée par le client.
-                            $dateArr_bddPlus1J = date('Y-m-d', (strtotime($dateArr_bdd) + $t1jour));
-                            // Retrait de 24h à la date de départ sélectionnée par le client.
-                            $dateDep_bddMoins1J = date('Y-m-d', (strtotime($dateDep_bdd) - $t1jour));
-                            // echo $dateArr_bdd.' ----- '.$dateDep_bdd; echo '<br>';
-                            // echo $dateArr_bddPlus1J.' ----- '.$dateDep_bddMoins1J; echo '<br>';
+                                // Ajout de 24h à la date d'arrivée sélectionnée par le client.
+                                $dateArr_bddPlus1J = date('Y-m-d', (strtotime($dateArr_bdd) + $t1jour));
+                                // Retrait de 24h à la date de départ sélectionnée par le client.
+                                $dateDep_bddMoins1J = date('Y-m-d', (strtotime($dateDep_bdd) - $t1jour));
+                                // echo $dateArr_bdd.' ----- '.$dateDep_bdd; echo '<br>';
+                                // echo $dateArr_bddPlus1J.' ----- '.$dateDep_bddMoins1J; echo '<br>';
 
-                            // Sélection des dates de réservations connues pour la modification de réservation choisie par le client.
-                            $sql = "SELECT dateArrivee, dateDepart FROM reservation WHERE numChambre = ? && numClient != ?
-                            && (dateArrivee BETWEEN ? AND ? OR dateDepart BETWEEN ? AND ?)";
-                            $res = mysqli_prepare($connect, $sql);
-                            mysqli_stmt_bind_param($res, 'iissss', $nCh_bdd, $nCl_bdd, $dateArr_bdd, $dateDep_bddMoins1J, $dateArr_bddPlus1J, $dateDep_bdd);
-                            $exe = mysqli_stmt_execute($res);
-                            mysqli_stmt_bind_result($res, $dateArr_sql, $dateDep_sql);
-                            mysqli_stmt_store_result($res);
-                            $nbRow_res = mysqli_stmt_num_rows($res);
-                            while(mysqli_stmt_fetch($res)) {
-                                $dateIndispoArr[] = '<b>'.dateFormat($dateArr_sql).'</b>';
-                                $dateIndispoDep[] = '<b>'.dateFormat($dateDep_sql).'</b>';
-                            }
-                            mysqli_stmt_free_result($res);
-                            mysqli_stmt_close($res);
+                                // Sélection des dates de réservations connues pour la modification de réservation choisie par le client.
+                                $sql = "SELECT dateArrivee, dateDepart FROM reservation WHERE numChambre = ? && numClient != ?
+                                && (dateArrivee BETWEEN ? AND ? OR dateDepart BETWEEN ? AND ?)";
+                                $res = mysqli_prepare($connect, $sql);
+                                mysqli_stmt_bind_param($res, 'iissss', $nCh_bdd, $nCl_bdd, $dateArr_bdd, $dateDep_bddMoins1J, $dateArr_bddPlus1J, $dateDep_bdd);
+                                $exe = mysqli_stmt_execute($res);
+                                mysqli_stmt_bind_result($res, $dateArr_sql, $dateDep_sql);
+                                mysqli_stmt_store_result($res);
+                                $nbRow_res = mysqli_stmt_num_rows($res);
+                                while(mysqli_stmt_fetch($res)) {
+                                    $dateIndispoArr[] = '<b>'.dateFormat($dateArr_sql).'</b>';
+                                    $dateIndispoDep[] = '<b>'.dateFormat($dateDep_sql).'</b>';
+                                }
+                                mysqli_stmt_free_result($res);
+                                mysqli_stmt_close($res);
 
-                            if($exe) {
-                                // Si la période est indisponible.
-                                if($nbRow_res != 0) {
-                                    $recap_donnees['Période'] = 'Période indisponible';
-                                // Si la période est disponible.
-                                } else {
-                                    $recap_donnees['Période'] = 'Période disponible';
-                                    if($recap_donnees['Mise à jour client'] != 'Vous n\'êtes pas autorisé à modifier les données du clients.<br>Plus d\'options, contacter un administrateur.') {
-                                        // Mise à jour de la réservation.
-                                        if($_SESSION['role'] == 1) {
-                                            $sql = "UPDATE reservation SET dateArrivee = ?, dateDepart = ? WHERE numClient = ?";
-                                            $res = mysqli_prepare($connect, $sql);
-                                            mysqli_stmt_bind_param($res, 'ssi', $dateArr_bdd, $dateDep_bdd, $nCl_bdd);
-                                        } else {
-                                            $sql = "UPDATE reservation SET dateDepart = ? WHERE numClient = ?";
-                                            $res = mysqli_prepare($connect, $sql);
-                                            mysqli_stmt_bind_param($res, 'si', $dateDep_bdd, $nCl_bdd);
+                                if($exe) {
+                                    // Si la période est indisponible.
+                                    if($nbRow_res != 0) {
+                                        $recap_donnees['Période'] = 'Période indisponible';
+                                    // Si la période est disponible.
+                                    } else {
+                                        $recap_donnees['Période'] = 'Période disponible';
+                                        if($recap_donnees['Mise à jour client'] != 'Vous n\'êtes pas autorisé à modifier les données du clients.<br>Plus d\'options, contacter un administrateur.') {
+                                            // Mise à jour de la réservation.
+                                            if($_SESSION['role'] == 1) {
+                                                $sql = "UPDATE reservation SET dateArrivee = ?, dateDepart = ? WHERE numClient = ?";
+                                                $res = mysqli_prepare($connect, $sql);
+                                                mysqli_stmt_bind_param($res, 'ssi', $dateArr_bdd, $dateDep_bdd, $nCl_bdd);
+                                            } else {
+                                                $sql = "UPDATE reservation SET dateDepart = ? WHERE numClient = ?";
+                                                $res = mysqli_prepare($connect, $sql);
+                                                mysqli_stmt_bind_param($res, 'si', $dateDep_bdd, $nCl_bdd);
+                                            }
+                                            mysqli_stmt_execute($res);
+                                            mysqli_stmt_close($res);
+                                            $recap_donnees['Réservation modifiée'] = 'Validée';
+                                            $upSuccess = 'Modification réussie';
                                         }
-                                        mysqli_stmt_execute($res);
-                                        mysqli_stmt_close($res);
-                                        $recap_donnees['Réservation modifiée'] = 'Validée';
-                                        $upSuccess = 'Modification réussie';
                                     }
                                 }
                             }
                         }
-                    }
-                } else { $recap_donnees['Dates saisies'] = 'Dates non modifiées'; }
+                    } else { $recap_donnees['Dates saisies'] = 'Dates non modifiées'; }
+                }
             }
             ?>
 
@@ -350,16 +372,35 @@ if(isset($_GET['client']) && isset($_GET['chambre'])) {
                 </div>
             </div>
 
+            <?php if($_SESSION['role'] != 1 && $tpsSejour >= 28) { ?>
             <div class="row justify-content-around">
                 <div class="col-md-4 col-12">
                     <label for="dateArr">Date d'arrivée</label>
-                    <input type="date" class="form-control text-center" id="dateArr" value="<?= $dateArr_bdd ?>" min="<?= $dateArr_min ?>" max="<?= $dateArr_max ?>" name="dateArr" <?= $inpReqOrRead ?>>
+                    <span style="background-color: #e9ecef;" class="form-control text-center"><?= $dateArr_bdd ?></span>
                 </div>
                 <div class="col-md-4 col-12">
                     <label for="dateDep">Date de départ</label>
-                    <input type="date" class="form-control text-center" id="dateDep" value="<?= $dateDep_bdd ?>" name="dateDep" min="<?= $dateDep_min; ?>" max="<?= $dateDep_max; ?>" required>
+                    <span style="background-color: #e9ecef;" class="form-control text-center"><?= $dateDep_bdd ?></span>
                 </div>
             </div>
+            <div class="pt-3"></div>
+            <div class="row justify-content-center">
+                <div class="col-10 text-center alert alert-danger" style="font-size: 1.2rem; font-weight: bolder;">Vous n'avez pas les autorisations pour modifier ce séjour. Veuillez contacter un adminsitrateur.</div>
+            </div>
+
+            <?php } else { ?>
+            
+            <div class="row justify-content-around">
+                <div class="col-md-4 col-12">
+                    <label for="dateArr">Date d'arrivée</label>
+                    <input type="date" class="form-control text-center" id="dateArr" value="<?= $dateArr_bdd ?>" min="<?= $dateArr_min ?>" max="<?= $dateArr_max ?>" name="dateArr" <?php if($dateArr_compar < date('Y-m-d')) { echo 'readonly'; } else { echo $inpReqOrRead; } ?>>
+                </div>
+                <div class="col-md-4 col-12">
+                    <label for="dateDep">Date de départ</label>
+                    <input type="date" class="form-control text-center" id="dateDep" value="<?= $dateDep_bdd ?>" name="dateDep" min="<?= $dateDep_min; ?>" max="<?= $dateDep_max; ?>" title="Pour un séjour au delà de 28 jours, contacter un administrateur" required>
+                </div>
+            </div>
+            <?php } ?>
 
             <hr>
 
@@ -402,10 +443,17 @@ if(isset($_GET['client']) && isset($_GET['chambre'])) {
             </div>
             
             <br>
+            
+            <?php if($_SESSION['role'] != 1 && $tpsSejour >= 28) { ?>
+            <div class="row justify-content-center">
+                <a href="./index.php?action=admin" class="btn btn-info col-md-3 mx-3 mt-3">RESERVATIONS</a>
+            </div>
+            <?php } else { ?>
             <div class="row justify-content-center">
                 <a onclick="return confirm('Annuler les modifications...')" href="admin.php" class="btn btn-danger col-md-3 mx-3 mt-3">Annuler</a>
                 <button onclick="return confirm('Valider les modifications...')" type="submit" class="btn btn-success col-md-3 mx-3 mt-3" name="modifier">Valider</button>
             </div>
+            <?php } ?>
 
             <?php if(isset($upSuccess)) { ?>
             <div class="text-right">
